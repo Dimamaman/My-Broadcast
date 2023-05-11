@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:toos="http://schemas.android.com/tools"
+    android:padding="16dp">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/bg"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:src="@drawable/bg_image"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/image"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        app:layout_constraintStart_toStartOf="@id/bg"
+        app:layout_constraintTop_toTopOf="@id/bg"
+        app:layout_constraintEnd_toEndOf="@id/bg"
+        app:layout_constraintBottom_toBottomOf="@id/bg"
+        android:src="@drawable/wifi_on"/>
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        toos:text="Wifi Connected"
+        android:textSize="18sp"
+        android:fontFamily="@font/montserrat_semibold"
+        app:layout_constraintTop_toTopOf="@id/bg"
+        app:layout_constraintBottom_toBottomOf="@id/bg"
+        app:layout_constraintStart_toEndOf="@id/bg"
+        android:layout_marginStart="20dp"/>
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/clickSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:thumb="@drawable/thumb"
+        app:layout_constraintBottom_toBottomOf="@+id/text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/text"
+        app:showText="true"
+        app:track="@drawable/track" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
