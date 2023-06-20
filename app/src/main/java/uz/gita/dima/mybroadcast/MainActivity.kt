@@ -1,30 +1,78 @@
 package uz.gita.dima.mybroadcast
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.google.android.material.snackbar.Snackbar
 import uz.gita.dima.mybroadcast.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
-    private val receiver = MyReceiver()
     private val myAdapter = MyAdapter()
     private val shared = MySharedPref.getInstance()
     private lateinit var binding: ActivityMainBinding
-    private lateinit var intentFilter: IntentFilter
+    private lateinit var layout: View
 
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        layout = binding.rv
+
+
+        when {
+            ContextCompat.checkSelfPermission(
+                this@MainActivity,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                layout.showSnackBar(
+                    binding.root,
+                    getString(R.string.permission_granted),
+                    Snackbar.LENGTH_SHORT,
+                    null
+                ) {
+
+                }
+            }
+
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                Manifest.permission.FOREGROUND_SERVICE
+            ) -> {
+                layout.showSnackBar(
+                    binding.root,
+                    getString(R.string.permission_required),
+                    Snackbar.LENGTH_SHORT,
+                    getString(R.string.ok)
+                ) {
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         myAdapter.submitList(list)
-        binding.rv.addItemDecoration(DividerItemDecoration(this,DividerItemDecoration.VERTICAL))
+        binding.rv.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         binding.rv.adapter = myAdapter
 
         binding.apply {
@@ -32,18 +80,15 @@ class MainActivity : AppCompatActivity() {
             toolbar.textAlignment = View.TEXT_ALIGNMENT_CENTER
         }
 
-        intentFilter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_POWER_CONNECTED)
-            addAction(Intent.ACTION_POWER_DISCONNECTED)
-            addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
-            addAction(Intent.ACTION_BATTERY_LOW)
-            addAction(Intent.ACTION_HEADSET_PLUG)
-            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
-        }
 
         myAdapter.setClickChecked {
+
+            val intent = Intent(this@MainActivity, MyService::class.java)
+            intent.putExtra("COMMAND", it.action)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else startService(intent)
+
             when (it.action) {
                 Intent.ACTION_SCREEN_ON -> {
                     shared.screenOn = it.isChecked
@@ -85,45 +130,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        receiver.setAirPlaneListener { number, action ->
-            if (shared.planeOn && number == 1) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.plane_on)
-                mediaPlayer.start()
-            }
-            if (shared.planeOff && number == 0) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.plane_off)
-                mediaPlayer.start()
-            }
-        }
-
-        receiver.setHeadSetPluginListener { number, action ->
-            if (shared.headPhonesOn && number == 1) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.headphones_on)
-                mediaPlayer.start()
-            }
-            if (shared.headPhonesOff && number == 0) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.headphones_off)
-                mediaPlayer.start()
-            }
-        }
-
-
-        receiver.setBluetoothListener { number, string ->
-            if (shared.bluetoothOn && number == 12) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.bluetooth_on)
-                mediaPlayer.start()
-            }
-            if (shared.bluetoothOff && number == 10) {
-                val mediaPlayer = MediaPlayer.create(this, R.raw.bluetooth_off)
-                mediaPlayer.start()
-            }
-        }
-        register()
-    }
-
-    private fun register() {
-        registerReceiver(receiver, intentFilter)
     }
 
     private val list = listOf(
@@ -213,9 +219,21 @@ class MainActivity : AppCompatActivity() {
             isChecked = shared.headPhonesOff
         )
     )
+}
 
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(receiver)
+fun View.showSnackBar(
+    view: View,
+    msg: String,
+    length: Int,
+    actionMessage: CharSequence?,
+    action: (View) -> Unit
+) {
+    val snackbar = Snackbar.make(view, msg, length)
+    if (actionMessage != null) {
+        snackbar.setAction(actionMessage) {
+            action(this)
+        }.show()
+    } else {
+        snackbar.show()
     }
 }

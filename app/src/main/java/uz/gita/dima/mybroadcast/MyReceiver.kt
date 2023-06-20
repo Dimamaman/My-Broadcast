@@ -5,57 +5,58 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
+import android.util.Log
 
-class MyReceiver: BroadcastReceiver() {
+class MyReceiver : BroadcastReceiver() {
 
     private lateinit var mediaPlayer: MediaPlayer
     private val shared = MySharedPref.getInstance()
 
-    private var airPlaneListener: ((Int, String) -> Unit)? = null
-    fun setAirPlaneListener(block: (Int, String) -> Unit) {
-        airPlaneListener = block
-    }
-
-    private var bluetoothListener: ((Int, String) -> Unit)? = null
-    fun setBluetoothListener(block: (Int,String) -> Unit) {
-        bluetoothListener = block
-    }
-
-    private var headSetPlugListener: ((Int,String) -> Unit)? = null
-    fun setHeadSetPluginListener(block: (Int, String) -> Unit) {
-        headSetPlugListener = block
-    }
-
     override fun onReceive(context: Context?, intent: Intent) {
-        when(intent.action) {
+        when (intent.action) {
             Intent.ACTION_AIRPLANE_MODE_CHANGED -> {
-                val state = intent.getBooleanExtra("state",false)
+                val state = intent.getBooleanExtra("state", false)
                 if (state) {
-                    airPlaneListener?.invoke(1,Intent.ACTION_AIRPLANE_MODE_CHANGED)
+                    if (shared.planeOn) {
+                        val mediaPlayer = MediaPlayer.create(context, R.raw.plane_on)
+                        mediaPlayer.start()
+                    }
                 } else {
-                    airPlaneListener?.invoke(0,Intent.ACTION_AIRPLANE_MODE_CHANGED)
+                    if (shared.planeOff) {
+                        val mediaPlayer = MediaPlayer.create(context, R.raw.plane_off)
+                        mediaPlayer.start()
+                    }
                 }
             }
 
             BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                when(val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
                     BluetoothAdapter.STATE_OFF -> {
-                        bluetoothListener?.invoke(state,BluetoothAdapter.ACTION_STATE_CHANGED)
+                        if (shared.bluetoothOff) {
+                            val mediaPlayer = MediaPlayer.create(context, R.raw.bluetooth_off)
+                            mediaPlayer.start()
+                        }
                     }
 
                     BluetoothAdapter.STATE_ON -> {
-                        bluetoothListener?.invoke(state,BluetoothAdapter.ACTION_STATE_CHANGED)
+                        if (shared.bluetoothOn) {
+                            val mediaPlayer = MediaPlayer.create(context, R.raw.bluetooth_on)
+                            mediaPlayer.start()
+                        }
                     }
                 }
             }
 
             Intent.ACTION_HEADSET_PLUG -> {
                 val int: Int = intent.getIntExtra("state", -1)
-                if (int == 1) {
-                    headSetPlugListener?.invoke(1,Intent.ACTION_HEADSET_PLUG)
+                if (shared.headPhonesOn && int == 1) {
+                    val mediaPlayer = MediaPlayer.create(context, R.raw.headphones_on)
+                    mediaPlayer.start()
                 }
-                if (int == 0) {
-                    headSetPlugListener?.invoke(0,Intent.ACTION_HEADSET_PLUG)
+
+                if (shared.headPhonesOff && int == 0) {
+                    val mediaPlayer = MediaPlayer.create(context, R.raw.headphones_off)
+                    mediaPlayer.start()
                 }
             }
 
