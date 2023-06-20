@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -69,9 +70,11 @@ class MyService : Service() {
         val notification = NotificationCompat
             .Builder(this, CHANNEL_ID)
             .setContentIntent(pendingIntent)
-            .setSmallIcon(R.drawable.icon)
+            .setSmallIcon(R.mipmap.icon_removebg)
             .setContentTitle("Ruxsatnamalar")
             .setOngoing(true)
+            /*.setColor(Color.argb(1,194,201,236))
+            .setColorized(true)*/
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(createNotificationLayout())
             .build()
